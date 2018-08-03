@@ -7,6 +7,7 @@ import weka.attributeSelection.InfoGainAttributeEval;
 import weka.attributeSelection.Ranker;
 import weka.classifiers.trees.J48;
 import weka.core.Instances;
+import weka.core.SerializationHelper;
 import weka.core.Utils;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Remove;
@@ -120,6 +121,43 @@ public class AppTest {
         tree.setOptions(optsJ48);
         tree.buildClassifier(dataTrain);
 
+        double right = 0;
+        int sum = dataTest.numInstances();
+
+        dataTest.setClassIndex(4);
+        for (int i = 0; i < sum; i++) {
+            double result = tree.classifyInstance(dataTest.instance(i));
+            System.out.println(result);
+            if (result == dataTest.instance(i).classValue()) {
+                right++;
+            }
+        }
+
+        System.out.println("J48 classification precision: " + (right / sum) * 100 + "%");
+    }
+
+    @Test
+    public void testSave() throws Exception {
+        Instances data = loadData("data/weather.nominal.arff");
+
+        AttributeSelection attSelection = new AttributeSelection();
+        attSelection.setEvaluator(new InfoGainAttributeEval());
+        attSelection.setSearch(new Ranker());
+        attSelection.SelectAttributes(data);
+
+        J48 tree = new J48();
+        String[] optsJ48 = new String[]{"-U"};
+        tree.setOptions(optsJ48);
+        tree.buildClassifier(data);
+
+        SerializationHelper.write("oos.model", tree);
+    }
+
+    @Test
+    public void testReload() throws Exception {
+        J48 tree = (J48) SerializationHelper.read("oos.model");
+
+        Instances dataTest = loadData("data/weather.nominal.arff");
         double right = 0;
         int sum = dataTest.numInstances();
 
